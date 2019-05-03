@@ -5,21 +5,18 @@ from PIL import Image
 import re
 import math
 import urllib
-class CrawlerSpider(scrapy.Spider):
-    name = 'crawler'
-    allowed_domains = ['results.vtu.ac.in']
-    start_urls = ['http://results.vtu.ac.in/resultsvitavicbcs_19/index.php']
-   
-    def solve_captcha():
+class captchaclass:
+    
+    def solve_captcha(self):
         #BREAK CAPTCHA
-        img = driver.find_elements(By.TAG_NAME, "img")
-        src = img[1].get_attribute('src')
+        #img = driver.find_elements(By.TAG_NAME, "img")
+        #src = img[1].get_attribute('src')
         print("##################################################")
-        print(src)
+        #print(src)
         loc = img[1].location
         size = img[1].size
         #print(loc,size)
-        driver.save_screenshot('ss.png')
+        #driver.save_screenshot('ss.png')
         im = Image.open('ss.png')
         left = loc['x']
         top = loc['y']
@@ -38,9 +35,15 @@ class CrawlerSpider(scrapy.Spider):
         #captcha.clear()
         #captcha.send_keys(captcha_text)
 
+class CrawlerSpider(scrapy.Spider):
+    name = 'crawler'
+    allowed_domains = ['results.vtu.ac.in']
+    start_urls = ['http://results.vtu.ac.in/resultsvitavicbcs_19/index.php']
+    
     def parse(self, response):
+        c = captchaclass()
         token1 = response.css('input[name="token"]::attr(value)').extract_first()
-        retrcap = solve_captcha()
+        retrcap = c.solve_captcha()
         data = {
             'token' : token1 ,
             'lns' : '1PE16CS036' ,
@@ -49,5 +52,8 @@ class CrawlerSpider(scrapy.Spider):
         yield scrapy.FormRequest(url = self.allowed_domains, formdata = data, callback = self.parse_result)
 
     def parse_result(self,response):
-        for i in range(0,100):
-            response.css('div.divTableCell::text').extract_first()
+        for res in response.css('div.divTableRow')[2]:
+            yield {
+                'sub_code' : res.css('div.divTableCell::text').extract_first()
+            }
+            
